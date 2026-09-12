@@ -25,6 +25,9 @@ class PulseRepository(context: Context) {
         entity?.toState() ?: CloneStateManager.fresh()
     }
 
+    /** Live list of recent sessions, newest first. */
+    val recentSessionsFlow: Flow<List<SessionEntity>> = sessions.watchRecent(20)
+
     /**
      * Store one finished set and move the clone forward.
      * Returns what the set earned so the result screen can show it.
@@ -58,6 +61,13 @@ class PulseRepository(context: Context) {
             clones.moveLastTrained(current.lastTrainedAt - days * DecayManager.DAY_MS)
         }
     }
+
+    /**
+     * Pure presentation stats for the home and progress screens, built
+     * from real stored sessions. The UI never computes these itself.
+     */
+    fun weeklyStats(): kotlinx.coroutines.flow.Flow<WeeklyStats> =
+        sessions.watchRecent(200).map { rows -> WeeklyStatsBuilder.build(rows, System.currentTimeMillis()) }
 
     private fun CloneEntity.toState(): CloneState {
         return CloneState(
