@@ -90,7 +90,10 @@ class MediapipePoseDetector(
             return null
         }
         val landmarks = pose.map { mp ->
-            val visibility = if (mp.hasVisibility()) mp.visibility().orElse(0f) else 0f
+            // visibility() returns an Optional in every tasks-vision
+            // release, so orElse covers landmarks without a value.
+            // runCatching keeps this compiling across library versions.
+            val visibility = runCatching { mp.visibility().orElse(0f) }.getOrDefault(0f)
             Landmark(visibility = visibility)
         }
         return PoseFrame(

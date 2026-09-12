@@ -3,6 +3,7 @@ memory/
 
 # Gradle and build outputs. Never commit generated files.
 .gradle/
+.kotlin/
 build/
 movement/build/
 local.properties

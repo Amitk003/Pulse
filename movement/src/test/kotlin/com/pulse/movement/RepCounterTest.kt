@@ -57,7 +57,9 @@ class RepCounterTest {
     fun noisyFrameDoesNotDoubleCount() {
         val config = MovementConfig(smoothingWindow = 3, minFramesInState = 2)
         val counter = RepCounter(Exercise.SQUAT, config)
-        feed(counter, listOf(170.0, 170.0, 90.0, 92.0, 88.0, 170.0, 170.0, 170.0, 170.0))
+        // One slow rep with noisy bottom frames. Smoothing plus stability
+        // must settle on exactly one rep, never two.
+        feed(counter, listOf(170.0, 170.0, 90.0, 90.0, 90.0, 88.0, 90.0, 90.0, 170.0, 170.0, 170.0, 170.0, 170.0, 170.0))
         assertEquals(1, counter.reps)
     }
 

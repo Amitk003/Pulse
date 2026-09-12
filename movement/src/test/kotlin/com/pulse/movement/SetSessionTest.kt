@@ -7,13 +7,15 @@ import org.junit.Test
 class SetSessionTest {
 
     private fun jointsFor(knee: Double): Map<String, Point2D> {
-        // Build a fake knee angle by placing the ankle on a circle
-        // around the knee. Hip stays fixed so the angle changes.
+        // Build a fake knee angle at the knee joint. Hip stays fixed and
+        // the ankle is placed so the hip-knee-ankle angle equals [knee].
+        // Vector knee->hip is (0, -1), so ankle offset (sin, -cos) gives
+        // cos(angle) = -dy / len and the exact wanted angle.
         val rad = Math.toRadians(knee)
         return mapOf(
             "left_hip" to Point2D(0.0, 0.0),
             "left_knee" to Point2D(0.0, 1.0),
-            "left_ankle" to Point2D(Math.cos(rad), 1.0 + Math.sin(rad))
+            "left_ankle" to Point2D(Math.sin(rad), 1.0 - Math.cos(rad))
         )
     }
 
@@ -45,10 +47,13 @@ class SetSessionTest {
         val session = SetSession(Exercise.SQUAT, config)
         session.onFrame(frame(0L, 170.0, visible = true))
         session.onFrame(frame(500L, 85.0, visible = false))
+        // The setup hint shows while the view is bad ...
+        assertTrue(session.blockedFrames > 0)
+        assertTrue(session.hint.isNotBlank())
+        // ... and clears once the view is fine, without counting a rep.
         session.onFrame(frame(1000L, 170.0, visible = true))
         session.onFrame(frame(1500L, 170.0, visible = true))
         assertEquals(0, session.reps)
         assertTrue(session.blockedFrames > 0)
-        assertTrue(session.hint.isNotBlank())
     }
 }

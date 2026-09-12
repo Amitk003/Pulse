@@ -11,8 +11,8 @@
 // - Model bundle: pose_landmarker_lite.task in app assets
 
 plugins {
-    id("com.android.library") version "8.5.2"
-    kotlin("android") version "2.0.20"
+    id("com.android.library")
+    kotlin("android")
 }
 
 android {

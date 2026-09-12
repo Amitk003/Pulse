@@ -91,9 +91,11 @@ class RepCounter(
 
         when (phase) {
             RepPhase.READY -> {
-                if (isDown && stable) {
-                    phase = RepPhase.DOWN
-                    framesInPhase = 0
+                if (isDown) {
+                    if (stable) {
+                        phase = RepPhase.DOWN
+                        framesInPhase = 0
+                    }
                 } else if (!nearStart) {
                     framesInPhase = 0
                 }
