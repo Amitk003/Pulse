@@ -1,76 +1,87 @@
 # Pulse
 
-## Train in real life. Watch your progress grow.
+## Train in real life. Build your clone.
 
-Pulse is a private workout companion that turns each real exercise set into useful feedback and visible progress. It counts repetitions, checks movement quality, and grows a personal training clone as the user stays consistent.
+Pulse is an Android fitness app that turns a real workout into clear feedback and visible progress. The phone camera watches one exercise set, counts valid repetitions, checks basic form, and helps the user improve over time.
 
-Pulse is designed for real places and real conditions:
+The result is more than a workout counter. Each good set helps build a personal training clone. The clone can later enter an offline arena where fitness progress and player skill work together.
 
-- Core training works without a network connection.
-- Camera data stays on the device.
-- Every result is easy to understand.
-- Progress rewards good form and regular training.
-- A small game layer makes the next workout feel worth doing.
+## Why Pulse is useful
 
-## What makes Pulse useful
+- Works without a network for the core workout loop.
+- Uses on-device pose tracking for camera feedback.
+- Explains why a repetition or form score was accepted or rejected.
+- Saves small workout results instead of raw video or pose data.
+- Turns steady training into simple, visible progress.
+- Leaves room for a fair game layer without making the workout feel like a spreadsheet.
 
-Most workout apps record numbers. Pulse explains what those numbers mean.
+## The user journey
 
-1. Pick an exercise.
-2. Place the whole body inside the camera view.
-3. Complete a set.
-4. Get repetition, form, and mistake feedback.
-5. See the result improve the clone.
-6. Use the clone in a short offline challenge.
+1. Choose an exercise.
+2. Place the phone so the full body is visible.
+3. Follow the live setup and form hints.
+4. Complete a set.
+5. Review repetitions, form score, mistakes, and next advice.
+6. See the clone update from the result.
+7. Enter a short challenge when the game layer is enabled.
 
-The result is a simple loop: train, learn, improve, and return.
+## Current product foundation
 
-## Product highlights
+The repository contains four focused modules:
 
-### Clear movement feedback
+- `movement` contains platform-free pose rules, visibility checks, rep counters, form checks, and unit tests.
+- `camera` connects CameraX to the local MediaPipe Pose Landmarker and sends small pose results to the movement module.
+- `data` stores finished sets and clone progress with Room and settings with DataStore.
+- `app` provides the Android screens for exercise selection, recording, and results.
 
-Pulse uses on-device pose tracking to count repetitions and check useful movement points. It can point out issues such as shallow depth, a rounded back, or an incomplete repetition.
+The first supported exercises are squat, push-up, and hinge movement. Their thresholds are starting values and must be checked on real phones before they are treated as final.
 
-### Progress with meaning
+## Privacy by design
 
-The clone grows from training quality, not only from raw volume. Strength, form, consistency, recovery, and level give the user a quick view of progress.
+The core flow processes camera input on the device. Pulse stores workout results such as exercise, repetitions, form score, mistakes, duration, and time. It does not need to store the video or raw pose landmarks to update progress.
 
-### Helpful coaching
+The app must ask for camera access only when recording starts, explain why it needs the camera, and give a clear result when the camera view is not reliable.
 
-The coach uses recent sessions to give a specific next tip. It does not need a network connection or a cloud language service for the core experience.
+## Build and test
 
-### Fair challenges
+Requirements:
 
-Challenge results combine clone power and user skill. A user with better timing and form can win, even when the other clone is stronger.
+- Android Studio with a working Android SDK.
+- Java 17.
+- A phone or emulator with a camera for camera tests.
 
-### Private by design
+Open the repository in Android Studio, let Gradle sync, and run the app on a device.
 
-Video and pose landmarks are processed locally. The app stores only the workout result needed for progress, such as repetitions, score, mistakes, and time.
+On Windows, run the checks with:
 
-## Product direction
+```text
+gradlew.bat :movement:test
+gradlew.bat test
+gradlew.bat lint
+gradlew.bat assembleDebug
+```
 
-The first product version focuses on three exercises:
+The movement tests do not need a phone. Camera, permission, storage, and full app checks need Android SDK tools. See [docs/development.md](docs/development.md) and [docs/testing.md](docs/testing.md).
 
-- Squat
-- Push-up
-- Hinge movement
-
-The app is planned as an Android application using Kotlin and Jetpack Compose. CameraX handles the camera view. MediaPipe Pose Landmarker supports local pose tracking. Room and DataStore support local storage. WorkManager supports scheduled local work.
-
-The design keeps the core loop useful when the phone is offline. Network features, such as weather data, are optional additions and must never block training.
-
-## Project documentation
+## Project documents
 
 - [Product overview](docs/overview.md)
 - [Architecture](docs/architecture.md)
-- [P1 movement and camera plan](docs/p1-ml-camera.md)
+- [Movement core](docs/movement-core.md)
+- [Pose and camera](docs/pose-camera.md)
+- [Local data](docs/local-data.md)
+- [Android and Unity integration](docs/unity-integration.md)
+- [Roadmap](docs/roadmap.md)
 - [Development guide](docs/development.md)
 - [Testing guide](docs/testing.md)
+- [Development log](docs/development-log.md)
 
-## Current repository state
+## Project status
 
-This repository is being built in small, reviewable changes. The `movement` module counts reps and scores form with unit tests, the `camera` module adds CameraX plus MediaPipe pose input, and the `app` module runs the select, record, and result screens on a real phone. Room storage, clone progress, coaching, fights, and social boards are still ahead.
+The current repository is an early working foundation. Local movement rules, camera input, local storage, clone progression, and the main training screens are in place. Coaching, the Unity arena, account sync, fights, and public leaderboards still need focused implementation and device testing.
+
+The product is being built in small branches with small commits. Each change should be easy to review, test, and hand over.
 
 ## License
 
-No public license has been selected yet. Do not reuse this project until a license is added.
+Add and review a public license before reusing or distributing this project. Also review the licenses for every third-party model, library, sound, and other asset used by the final app.
