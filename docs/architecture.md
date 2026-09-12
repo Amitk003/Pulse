@@ -11,8 +11,9 @@
 - Java 17 and Kotlin 2.0
 - Gradle multi-module build
 
-The repository has four source modules: `movement` for counting and scoring,
-`camera` for pose input, `app` for screens, and `data` for storage and progress.
+The repository has five source modules: `movement` for counting and scoring,
+`camera` for pose input, `app` for screens, `data` for storage and progress,
+and `bridge` for platform-free Unity integration contracts.
 These boundaries describe the current code and should be updated when code changes.
 
 ## Layer boundaries
@@ -85,8 +86,9 @@ The current data records include:
 - Session: exercise, repetitions, score, mistakes, duration, time, and review flag
 - Clone state: strength, experience, level, consistency, form mastery, recovery, and last training time
 
-The Unity bridge should use a separate `PlayerSnapshot` and `FightResult`
-contract. Those contracts must not expose Room entities or Android classes.
+The Unity bridge uses the platform-free `bridge` module's `PlayerSnapshot` and
+`FightResult` contracts. Those contracts must not expose Room entities or
+Android classes.
 
 ## Offline behavior
 

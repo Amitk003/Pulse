@@ -46,6 +46,12 @@ folder is ignored and must not be pushed.
 - Hidden the progress time-shift control outside debug builds.
 - The debug control remains available for local decay testing.
 
+### Integration contracts
+
+- Added the platform-free `bridge` module.
+- Added versioned and validated `PlayerSnapshot` and `FightResult` models.
+- Added unit tests for valid data, bad ranges, unstable ids, and unknown outcomes.
+
 ### Manual work still needed
 
 - Install Android Studio and the Android SDK.

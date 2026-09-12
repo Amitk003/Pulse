@@ -39,6 +39,8 @@ The first step finds mobile control and gameplay problems before Gradle integrat
 
 The first bridge contract should contain only values the arena needs:
 
+The first contract lives in `bridge/src/main/kotlin/com/pulse/bridge`.
+
 ```text
 PlayerSnapshot
     playerId
@@ -57,6 +59,8 @@ The bridge should send JSON or another versioned format. Add a `schemaVersion` f
 ## Data returned from Unity
 
 Unity should return:
+
+The same module owns the return contract.
 
 ```text
 FightResult
