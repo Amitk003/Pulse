@@ -69,7 +69,7 @@ The design keeps the core loop useful when the phone is offline. Network feature
 
 ## Current repository state
 
-This repository is being built in small, reviewable changes. The current branch contains the product direction and the technical foundation documents. Source folders will be added behind focused branches as each part is implemented.
+This repository is being built in small, reviewable changes. The `movement` module counts reps and scores form with unit tests, the `camera` module adds CameraX plus MediaPipe pose input, and the `app` module runs the select, record, and result screens on a real phone. Room storage, clone progress, coaching, fights, and social boards are still ahead.
 
 ## License
 

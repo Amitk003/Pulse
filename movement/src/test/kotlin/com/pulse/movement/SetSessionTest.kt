@@ -24,6 +24,36 @@ class SetSessionTest {
         return PoseFrame(timeMs = timeMs, landmarks = landmarks, joints = jointsFor(knee))
     }
 
+    private fun frontFrame(timeMs: Long, joints: Map<String, Point2D>): PoseFrame {
+        val landmarks = List(33) { Landmark(visibility = 0.9f) }
+        return PoseFrame(timeMs = timeMs, landmarks = landmarks, joints = joints)
+    }
+
+    /**
+     * Front-view squat joints with both legs. Standing frames are
+     * straight and symmetric. The bent frame keeps a 90 degree left
+     * knee while both knees cave far inside the ankles.
+     */
+    private fun frontSquatJoints(bent: Boolean): Map<String, Point2D> {
+        return if (!bent) {
+            mapOf(
+                "left_hip" to Point2D(0.0, 0.0),
+                "left_knee" to Point2D(-0.15, 1.0),
+                "left_ankle" to Point2D(-0.15, 1.98),
+                "right_knee" to Point2D(0.15, 1.0),
+                "right_ankle" to Point2D(0.15, 1.98)
+            )
+        } else {
+            mapOf(
+                "left_hip" to Point2D(0.0, 0.0),
+                "left_knee" to Point2D(0.1, 1.0),
+                "left_ankle" to Point2D(1.095, 0.9),
+                "right_knee" to Point2D(-0.1, 1.0),
+                "right_ankle" to Point2D(-1.095, 0.9)
+            )
+        }
+    }
+
     @Test
     fun fullSetFinishesWithValidResult() {
         val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
@@ -42,8 +72,7 @@ class SetSessionTest {
     }
 
     @Test
-    fun blockedFramesDoNotCount() {
-        val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
+    fun blockedFramesDoNotCount() {        val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
         val session = SetSession(Exercise.SQUAT, config)
         session.onFrame(frame(0L, 170.0, visible = true))
         session.onFrame(frame(500L, 85.0, visible = false))
@@ -55,5 +84,21 @@ class SetSessionTest {
         session.onFrame(frame(1500L, 170.0, visible = true))
         assertEquals(0, session.reps)
         assertTrue(session.blockedFrames > 0)
+    }
+
+    @Test
+    fun cavedKneesFlowIntoResultMistakes() {
+        val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
+        val session = SetSession(Exercise.SQUAT, config)
+        var time = 0L
+        // One full squat whose bent frame caves both knees inward.
+        for (bent in listOf(false, true, false, false)) {
+            session.onFrame(frontFrame(time, frontSquatJoints(bent)))
+            time += 500L
+        }
+        assertEquals(1, session.reps)
+        val result = session.finish()
+        assertTrue(result.isValid())
+        assertEquals(listOf("knee-valgus"), result.mistakes)
     }
 }

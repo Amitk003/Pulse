@@ -40,6 +40,7 @@ class MediapipePoseDetector(
     private var landmarker: PoseLandmarker? = null
     private var lastResult: PoseLandmarkerResult? = null
     private var lastError: String? = null
+    private var lastPoseCount: Int = 0
 
     /**
      * Create the landmarker. Call once before the first frame.
@@ -57,7 +58,10 @@ class MediapipePoseDetector(
             .setMinPoseDetectionConfidence(minPoseDetectionConfidence)
             .setMinPosePresenceConfidence(minPosePresenceConfidence)
             .setMinTrackingConfidence(minTrackingConfidence)
-            .setResultListener { result, _ -> lastResult = result }
+            .setResultListener { result, _ ->
+                lastResult = result
+                lastPoseCount = result.landmarks().size
+            }
             .setErrorListener { error -> lastError = error.message }
             .build()
         landmarker?.close()
@@ -77,11 +81,13 @@ class MediapipePoseDetector(
     /**
      * Convert the latest MediaPipe result into a [PoseFrame].
      * Returns null when no person is found or data is incomplete.
-     * Only the first pose is used. When two people are in view the
-     * screen must ask the user to keep only one person in frame.
+     * Only the first pose is used. Check [lastPoseCount] first:
+     * when two people are in view the screen must ask the user to
+     * keep only one person in frame instead of counting.
      */
     fun latestPoseFrame(nowMs: Long): PoseFrame? {
         val result = lastResult ?: return null
+        lastPoseCount = result.landmarks().size
         if (result.landmarks().isEmpty()) {
             return null
         }
@@ -105,16 +111,22 @@ class MediapipePoseDetector(
 
     fun lastErrorMessage(): String? = lastError
 
+    /** Poses seen in the latest result. More than one means warn, do not count. */
+    fun lastPoseCount(): Int = lastPoseCount
+
     override fun close() {
         landmarker?.close()
         landmarker = null
         lastResult = null
+        lastPoseCount = 0
     }
 
     /**
      * Map MediaPipe indices to the joint names used by PoseFrame.
-     * Indices follow the 33 point BlazePose layout: 11 left shoulder,
-     * 13 left elbow, 15 left wrist, 23 left hip, 25 left knee, 27 left ankle.
+     * Indices follow the 33 point BlazePose layout. Left side: 11 left
+     * shoulder, 13 left elbow, 15 left wrist, 23 left hip, 25 left knee,
+     * 27 left ankle. Right side mirrors it: 12, 14, 16, 24, 26, 28.
+     * Right-side points feed front-view checks such as knee valgus.
      */
     private fun extractJoints(
         pose: List<com.google.mediapipe.tasks.components.containers.NormalizedLandmark>
@@ -129,7 +141,13 @@ class MediapipePoseDetector(
             "left_wrist" to point(15),
             "left_hip" to point(23),
             "left_knee" to point(25),
-            "left_ankle" to point(27)
+            "left_ankle" to point(27),
+            "right_shoulder" to point(12),
+            "right_elbow" to point(14),
+            "right_wrist" to point(16),
+            "right_hip" to point(24),
+            "right_knee" to point(26),
+            "right_ankle" to point(28)
         )
     }
 }
