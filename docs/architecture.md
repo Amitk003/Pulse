@@ -10,7 +10,9 @@
 - DataStore for small settings
 - WorkManager for scheduled local work
 
-The repository does not contain the Android source module yet. These boundaries describe the implementation target and should be updated when source code is added.
+The repository now holds real source modules: `movement` for counting and scoring,
+`camera` for pose input, `app` for screens, and `data` for storage and progress.
+These boundaries describe the current code and should be updated when code changes.
 
 ## Layer boundaries
 
