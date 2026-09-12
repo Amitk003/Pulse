@@ -37,6 +37,7 @@ android {
 dependencies {
     implementation(project(":movement"))
     implementation(project(":camera"))
+    implementation(project(":data"))
 
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)

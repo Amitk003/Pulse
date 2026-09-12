@@ -31,19 +31,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.pulse.camera.AnalyzerStats
 import com.pulse.camera.CameraCapture
 import com.pulse.camera.MediapipePoseDetector
+import com.pulse.data.CloneState
+import com.pulse.data.CloneStateManager
+import com.pulse.data.LevelUpInfo
+import com.pulse.data.PulseRepository
 import com.pulse.movement.Exercise
 import com.pulse.movement.SetResult
+import kotlinx.coroutines.launch
 
 private enum class Screen {
     SELECT,
@@ -64,15 +71,27 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun PulseApp() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val repository = remember { PulseRepository(context.applicationContext) }
+    val clone by repository.cloneFlow.collectAsStateWithLifecycle(
+        initialValue = CloneStateManager.fresh()
+    )
     var screen by remember { mutableStateOf(Screen.SELECT) }
     var exercise by remember { mutableStateOf(Exercise.SQUAT) }
     var result by remember { mutableStateOf<SetResult?>(null) }
     var stats by remember { mutableStateOf(AnalyzerStats(accepted = 0, dropped = 0)) }
+    var levelInfo by remember { mutableStateOf<LevelUpInfo?>(null) }
     when (screen) {
         Screen.SELECT -> SelectScreen(
+            clone = clone,
             onPick = {
                 exercise = it
+                levelInfo = null
                 screen = Screen.RECORD
+            },
+            onSimulateBreak = {
+                scope.launch { repository.shiftLastTrainedBy(8) }
             }
         )
         Screen.RECORD -> RecordScreen(
@@ -80,13 +99,22 @@ private fun PulseApp() {
             onFinish = { finished, finishedStats ->
                 result = finished
                 stats = finishedStats
-                screen = Screen.RESULT
+                if (finished == null) {
+                    levelInfo = null
+                    screen = Screen.RESULT
+                } else {
+                    scope.launch {
+                        levelInfo = repository.saveResult(finished)
+                        screen = Screen.RESULT
+                    }
+                }
             },
             onCancel = { screen = Screen.SELECT }
         )
         Screen.RESULT -> ResultScreen(
             result = result,
             stats = stats,
+            levelInfo = levelInfo,
             onAgain = { screen = Screen.RECORD },
             onSelect = { screen = Screen.SELECT }
         )
@@ -94,7 +122,11 @@ private fun PulseApp() {
 }
 
 @Composable
-private fun SelectScreen(onPick: (Exercise) -> Unit) {
+private fun SelectScreen(
+    clone: CloneState,
+    onPick: (Exercise) -> Unit,
+    onSimulateBreak: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -103,7 +135,15 @@ private fun SelectScreen(onPick: (Exercise) -> Unit) {
         Text("Pulse", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(8.dp))
         Text("Train a set. Grow your clone.")
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(16.dp))
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Clone level ${clone.level}", style = MaterialTheme.typography.titleMedium)
+                Text("Strength ${"%.1f".format(clone.strength)} - ${clone.xp} XP")
+                Text("Form ${clone.formMastery.toInt()} - trained ${clone.consistency.times(5).toInt()} of 5 days")
+            }
+        }
+        Spacer(Modifier.height(16.dp))
         for (exercise in Exercise.entries) {
             Button(
                 onClick = { onPick(exercise) },
@@ -111,6 +151,10 @@ private fun SelectScreen(onPick: (Exercise) -> Unit) {
             ) {
                 Text(exercise.id.replaceFirstChar { it.uppercase() })
             }
+        }
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(onClick = onSimulateBreak) {
+            Text("Simulate +8 days (debug)")
         }
     }
 }
@@ -225,6 +269,7 @@ private fun RecordScreen(
 private fun ResultScreen(
     result: SetResult?,
     stats: AnalyzerStats,
+    levelInfo: LevelUpInfo?,
     onAgain: () -> Unit,
     onSelect: () -> Unit
 ) {
@@ -242,6 +287,19 @@ private fun ResultScreen(
             Text("Form score: ${result.formScore}")
             Text("Time: ${result.durationSec}s")
             Text("Analyzer: ${stats.accepted} frames, ${stats.dropped} dropped")
+            if (levelInfo != null) {
+                Spacer(Modifier.height(8.dp))
+                Text("+${levelInfo.xpGained} XP")
+                if (levelInfo.comebackApplied) {
+                    Text("Comeback bonus x1.75")
+                }
+                if (levelInfo.decayed) {
+                    Text("Clone rested long, strength dipped first")
+                }
+                if (levelInfo.leveledUp) {
+                    Text("Level up! Now level ${levelInfo.newLevel}")
+                }
+            }
             Spacer(Modifier.height(8.dp))
             if (result.mistakes.isEmpty()) {
                 Text("Clean set. No mistakes found.")
