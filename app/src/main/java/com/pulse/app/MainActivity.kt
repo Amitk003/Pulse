@@ -82,6 +82,7 @@ private fun PulseApp() {
     var result by remember { mutableStateOf<SetResult?>(null) }
     var stats by remember { mutableStateOf(AnalyzerStats(accepted = 0, dropped = 0)) }
     var levelInfo by remember { mutableStateOf<LevelUpInfo?>(null) }
+    var arenaMessage by remember { mutableStateOf<String?>(null) }
     when (screen) {
         Screen.SELECT -> SelectScreen(
             clone = clone,
@@ -89,6 +90,14 @@ private fun PulseApp() {
                 exercise = it
                 levelInfo = null
                 screen = Screen.RECORD
+            },
+            arenaMessage = arenaMessage,
+            onPlayArena = {
+                arenaMessage = when (ArenaLauncher.launch(context)) {
+                    ArenaLauncher.Result.LAUNCHED -> null
+                    ArenaLauncher.Result.NOT_INSTALLED ->
+                        "Install the Pulse Arena game first, then try again."
+                }
             },
             onSimulateBreak = if (BuildConfig.DEBUG) {
                 { scope.launch { repository.shiftLastTrainedBy(8) } }
@@ -127,6 +136,8 @@ private fun PulseApp() {
 private fun SelectScreen(
     clone: CloneState,
     onPick: (Exercise) -> Unit,
+    arenaMessage: String?,
+    onPlayArena: () -> Unit,
     onSimulateBreak: (() -> Unit)?
 ) {
     Column(
@@ -137,6 +148,17 @@ private fun SelectScreen(
         Text("Pulse", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(8.dp))
         Text("Train a set. Grow your clone.")
+        Spacer(Modifier.height(16.dp))
+        Button(
+            onClick = onPlayArena,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Play Arena")
+        }
+        if (arenaMessage != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(arenaMessage, style = MaterialTheme.typography.bodyMedium)
+        }
         Spacer(Modifier.height(16.dp))
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {

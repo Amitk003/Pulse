@@ -30,8 +30,10 @@ Unity must not read Room tables directly. Pulse sends a small player snapshot to
 
 Use two steps:
 
-1. Build the Unity game as its own Android app and start it from Pulse.
+1. Build the Unity game as its own Android app with package `com.pulse.arena` and start it from the Pulse `Play Arena` button.
 2. After that works on real phones, export Unity as an Android Library and embed it in Pulse.
+
+Pulse checks whether `com.pulse.arena` is installed before it starts the game. The first version does not copy camera data into Unity. It only proves the app-to-game launch and return flow.
 
 The first step finds mobile control and gameplay problems before Gradle integration makes the work harder.
 

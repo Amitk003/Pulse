@@ -46,6 +46,13 @@ folder is ignored and must not be pushed.
 - Hidden the progress time-shift control outside debug builds.
 - The debug control remains available for local decay testing.
 
+### Arena launch flow
+
+- Added a `Play Arena` button to the Pulse home screen.
+- Added a package visibility query for `com.pulse.arena`.
+- Added a clear message when the Unity game APK is not installed.
+- The Unity game is still a separate APK until the launch flow works on a real phone.
+
 ### Manual work still needed
 
 - Install Android Studio and the Android SDK.
