@@ -90,8 +90,10 @@ private fun PulseApp() {
                 levelInfo = null
                 screen = Screen.RECORD
             },
-            onSimulateBreak = {
-                scope.launch { repository.shiftLastTrainedBy(8) }
+            onSimulateBreak = if (BuildConfig.DEBUG) {
+                { scope.launch { repository.shiftLastTrainedBy(8) } }
+            } else {
+                null
             }
         )
         Screen.RECORD -> RecordScreen(
@@ -125,7 +127,7 @@ private fun PulseApp() {
 private fun SelectScreen(
     clone: CloneState,
     onPick: (Exercise) -> Unit,
-    onSimulateBreak: () -> Unit
+    onSimulateBreak: (() -> Unit)?
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -152,9 +154,11 @@ private fun SelectScreen(
                 Text(exercise.id.replaceFirstChar { it.uppercase() })
             }
         }
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onSimulateBreak) {
-            Text("Simulate +8 days (debug)")
+        if (onSimulateBreak != null) {
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = onSimulateBreak) {
+                Text("Simulate +8 days (debug)")
+            }
         }
     }
 }

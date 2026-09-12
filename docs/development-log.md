@@ -40,6 +40,12 @@ folder is ignored and must not be pushed.
 - Added a short idle wait before a set result is built so the in-flight result is not lost.
 - The camera module still needs Android SDK compilation and real phone testing.
 
+### Release build guard
+
+- Enabled generated `BuildConfig` values in the app module.
+- Hidden the progress time-shift control outside debug builds.
+- The debug control remains available for local decay testing.
+
 ### Manual work still needed
 
 - Install Android Studio and the Android SDK.
