@@ -1,2 +1,16 @@
 # Local handover memory. This folder must never be pushed.
 memory/
+
+# Gradle and build outputs. Never commit generated files.
+.gradle/
+build/
+movement/build/
+local.properties
+
+# Android Studio and IntelliJ local files.
+.idea/
+*.iml
+
+# OS files.
+.DS_Store
+Thumbs.db
