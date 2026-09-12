@@ -27,7 +27,7 @@ Android code (needs a phone):
 ## Setup
 
 1. Put `pose_landmarker_lite.task` in `app/src/main/assets`.
-2. Add `include(":camera")` to `settings.gradle.kts` after the SDK is ready.
+2. Confirm that `include(":camera")` is present in `settings.gradle.kts`.
 3. Ask for camera permission only when recording starts.
 4. Start preview and analysis together. Stop both in onPause or onStop.
 5. If permission is denied, show help text and do not crash.
@@ -42,6 +42,8 @@ Android code (needs a phone):
 - Analyzer time and dropped frame count on a real phone.
 - Airplane mode still counts and saves.
 - Proof that no video or landmark file is saved.
+- The MediaPipe result callback updates the session only after the async result arrives.
+- Stopping a set waits briefly for the in-flight result before building `SetResult`.
 
 ## Test commands
 
@@ -54,3 +56,7 @@ Pure tests (need Java 17):
 On Windows use `gradlew.bat :movement:test`.
 
 Camera checks need a real phone and cannot run in a simulator alone.
+
+`MediapipePoseDetector` sends a `PoseDetection` callback when the live result is
+ready. `CameraCapture` does not read a previous result immediately after
+calling `detectAsync`. This keeps the frame time and result order correct.

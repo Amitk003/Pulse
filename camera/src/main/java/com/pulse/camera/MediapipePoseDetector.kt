@@ -10,6 +10,12 @@ import com.pulse.movement.Landmark
 import com.pulse.movement.Point2D
 import com.pulse.movement.PoseFrame
 
+data class PoseDetection(
+    val frame: PoseFrame?,
+    val poseCount: Int,
+    val errorMessage: String? = null
+)
+
 /**
  * MediaPipe Pose Landmarker wrapper for live camera frames.
  *
@@ -38,9 +44,9 @@ class MediapipePoseDetector(
     }
 
     private var landmarker: PoseLandmarker? = null
-    private var lastResult: PoseLandmarkerResult? = null
-    private var lastError: String? = null
-    private var lastPoseCount: Int = 0
+    private var detectionListener: ((PoseDetection) -> Unit)? = null
+    @Volatile
+    private var pendingFrameTimeMs: Long = 0L
 
     /**
      * Create the landmarker. Call once before the first frame.
@@ -59,13 +65,26 @@ class MediapipePoseDetector(
             .setMinPosePresenceConfidence(minPosePresenceConfidence)
             .setMinTrackingConfidence(minTrackingConfidence)
             .setResultListener { result, _ ->
-                lastResult = result
-                lastPoseCount = result.landmarks().size
+                val poses = result.landmarks()
+                detectionListener?.invoke(
+                    PoseDetection(
+                        frame = toPoseFrame(poses.firstOrNull(), pendingFrameTimeMs),
+                        poseCount = poses.size
+                    )
+                )
             }
-            .setErrorListener { error -> lastError = error.message }
+            .setErrorListener { error ->
+                detectionListener?.invoke(
+                    PoseDetection(frame = null, poseCount = 0, errorMessage = error.message)
+                )
+            }
             .build()
         landmarker?.close()
         landmarker = PoseLandmarker.createFromOptions(context, options)
+    }
+
+    fun setDetectionListener(listener: ((PoseDetection) -> Unit)?) {
+        detectionListener = listener
     }
 
     /**
@@ -75,23 +94,30 @@ class MediapipePoseDetector(
      * the preview. Callers must drop a frame while one is in flight.
      */
     fun detectAsync(image: MPImage, frameTimeMs: Long) {
-        landmarker?.detectAsync(image, frameTimeMs)
+        pendingFrameTimeMs = frameTimeMs
+        val current = landmarker
+        if (current == null) {
+            detectionListener?.invoke(
+                PoseDetection(frame = null, poseCount = 0, errorMessage = "Pose detector is not ready.")
+            )
+            return
+        }
+        current.detectAsync(image, frameTimeMs)
     }
 
     /**
-     * Convert the latest MediaPipe result into a [PoseFrame].
+     * Convert one MediaPipe result into a [PoseFrame].
      * Returns null when no person is found or data is incomplete.
-     * Only the first pose is used. Check [lastPoseCount] first:
-     * when two people are in view the screen must ask the user to
-     * keep only one person in frame instead of counting.
+     * Only the first pose is converted. The caller must check the pose count
+     * first and ask the user to keep only one person in frame when needed.
      */
-    fun latestPoseFrame(nowMs: Long): PoseFrame? {
-        val result = lastResult ?: return null
-        lastPoseCount = result.landmarks().size
-        if (result.landmarks().isEmpty()) {
+    private fun toPoseFrame(
+        pose: List<com.google.mediapipe.tasks.components.containers.NormalizedLandmark>?,
+        frameTimeMs: Long
+    ): PoseFrame? {
+        if (pose == null) {
             return null
         }
-        val pose = result.landmarks()[0]
         if (pose.size < LANDMARK_COUNT) {
             return null
         }
@@ -103,22 +129,17 @@ class MediapipePoseDetector(
             Landmark(visibility = visibility)
         }
         return PoseFrame(
-            timeMs = nowMs,
+            timeMs = frameTimeMs,
             landmarks = landmarks,
             joints = extractJoints(pose)
         )
     }
 
-    fun lastErrorMessage(): String? = lastError
-
-    /** Poses seen in the latest result. More than one means warn, do not count. */
-    fun lastPoseCount(): Int = lastPoseCount
-
     override fun close() {
         landmarker?.close()
         landmarker = null
-        lastResult = null
-        lastPoseCount = 0
+        pendingFrameTimeMs = 0L
+        detectionListener = null
     }
 
     /**

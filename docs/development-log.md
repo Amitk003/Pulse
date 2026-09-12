@@ -33,6 +33,13 @@ folder is ignored and must not be pushed.
 - Pinned MediaPipe tasks-vision to `0.10.26.1` in the camera module.
 - Updated the camera source and camera document to show the pinned version.
 
+### Camera result flow
+
+- Fixed the live camera path so it processes a `PoseDetection` only from the MediaPipe result callback.
+- Removed the old immediate read of the previous pose result after `detectAsync`.
+- Added a short idle wait before a set result is built so the in-flight result is not lost.
+- The camera module still needs Android SDK compilation and real phone testing.
+
 ### Manual work still needed
 
 - Install Android Studio and the Android SDK.

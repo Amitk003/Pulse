@@ -14,6 +14,8 @@ import com.pulse.movement.MovementConfig
 import com.pulse.movement.SetResult
 import com.pulse.movement.SetSession
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Simple analyzer stats for the device test log. */
@@ -44,6 +46,8 @@ class CameraCapture(
     private val worker = Executors.newSingleThreadExecutor()
     private val inFlight = AtomicBoolean(false)
     private val throttler = FrameThrottler(minIntervalMs = 50L)
+    private val acceptingResults = AtomicBoolean(false)
+    private val idleLock = Object()
     private var session: SetSession? = null
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -55,6 +59,45 @@ class CameraCapture(
         exercise: Exercise,
         onUpdate: (reps: Int, hint: String) -> Unit
     ) {
+        acceptingResults.set(true)
+        detector.setDetectionListener { detection ->
+            if (!acceptingResults.get()) {
+                inFlight.set(false)
+                return@setDetectionListener
+            }
+            try {
+                worker.execute {
+                    try {
+                        if (!acceptingResults.get()) {
+                            return@execute
+                        }
+                        when {
+                            detection.poseCount > 1 -> {
+                                onUpdate(session?.reps ?: 0, "Keep only one person in frame.")
+                            }
+                            detection.frame != null -> {
+                                session?.onFrame(detection.frame)
+                                onUpdate(
+                                    session?.reps ?: 0,
+                                    session?.hint ?: ""
+                                )
+                            }
+                            !detection.errorMessage.isNullOrBlank() -> {
+                                onUpdate(
+                                    session?.reps ?: 0,
+                                    "Camera analysis failed. Try again."
+                                )
+                            }
+                        }
+                    } finally {
+                        inFlight.set(false)
+                        synchronized(idleLock) { idleLock.notifyAll() }
+                    }
+                }
+            } catch (_: RejectedExecutionException) {
+                inFlight.set(false)
+            }
+        }
         detector.setup(context)
         session = SetSession(exercise, config)
         throttler.reset()
@@ -88,19 +131,7 @@ class CameraCapture(
                     val rotated = rotateBitmap(bitmap, rotation)
                     val mpImage = BitmapImageBuilder(rotated).build()
                     detector.detectAsync(mpImage, nowMs)
-                    if (detector.lastPoseCount() > 1) {
-                        onUpdate(session?.reps ?: 0, "Keep only one person in frame.")
-                        return@setAnalyzer
-                    }
-                    val frame = detector.latestPoseFrame(nowMs)
-                    if (frame != null) {
-                        session?.onFrame(frame)
-                        val reps = session?.reps ?: 0
-                        val hint = session?.hint ?: ""
-                        onUpdate(reps, hint)
-                    }
                 } finally {
-                    inFlight.set(false)
                     imageProxy.close()
                 }
             }
@@ -120,9 +151,7 @@ class CameraCapture(
             cameraProvider?.unbindAll()
         } finally {
             cameraProvider = null
-            worker.execute {
-                inFlight.set(false)
-            }
+            awaitIdle()
         }
     }
 
@@ -136,6 +165,8 @@ class CameraCapture(
      * Safe to call on the main thread. Call after [stop].
      */
     fun finish(): SetResult? {
+        awaitIdle()
+        acceptingResults.set(false)
         return try {
             session?.finish()
         } catch (e: IllegalStateException) {
@@ -160,7 +191,25 @@ class CameraCapture(
 
     fun close() {
         stop()
+        acceptingResults.set(false)
         detector.close()
         worker.shutdown()
+    }
+
+    private fun awaitIdle() {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(500)
+        synchronized(idleLock) {
+            while (inFlight.get()) {
+                val remaining = deadline - System.nanoTime()
+                if (remaining <= 0L) break
+                val millis = TimeUnit.NANOSECONDS.toMillis(remaining).coerceAtLeast(1L)
+                try {
+                    idleLock.wait(millis)
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    break
+                }
+            }
+        }
     }
 }
