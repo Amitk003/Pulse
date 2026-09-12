@@ -22,7 +22,7 @@ Android code (needs a phone):
 - `camera/.../CameraCapture.kt`
   CameraX preview plus analysis with KEEP_ONLY_LATEST. Rotates each frame from ImageInfo so points match the preview. Sends small updates (reps and hint) to the screen, never full landmarks.
 - `camera/build.gradle.kts`
-  Lists CameraX 1.3.4 and tasks-vision latest.release. Not included in settings yet so the movement build stays green until the Android SDK is ready.
+  Lists CameraX 1.3.4 and MediaPipe tasks-vision 0.10.26.1. The camera module is included in the current settings. Android checks still need a valid SDK and a real device.
 
 ## Setup
 

@@ -23,7 +23,7 @@ import com.pulse.movement.PoseFrame
  * frame or landmark is saved or uploaded.
  *
  * Model file: place pose_landmarker_lite.task in app/src/main/assets.
- * Dependency: com.google.mediapipe:tasks-vision:latest.release.
+ * Dependency: com.google.mediapipe:tasks-vision:0.10.26.1.
  */
 class MediapipePoseDetector(
     private val minPoseDetectionConfidence: Float = 0.5f,

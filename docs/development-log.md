@@ -28,6 +28,11 @@ folder is ignored and must not be pushed.
 - Updated the Android development guide for the current modules.
 - Added this development log.
 
+### Build reproducibility
+
+- Pinned MediaPipe tasks-vision to `0.10.26.1` in the camera module.
+- Updated the camera source and camera document to show the pinned version.
+
 ### Manual work still needed
 
 - Install Android Studio and the Android SDK.

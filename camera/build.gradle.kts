@@ -7,7 +7,7 @@
 //
 // Versions used here:
 // - CameraX 1.3.4 (camera-core, camera-camera2, camera-lifecycle, camera-view)
-// - MediaPipe tasks-vision latest.release (Pose Landmarker, LIVE_STREAM)
+// - MediaPipe tasks-vision 0.10.26.1 (Pose Landmarker, LIVE_STREAM)
 // - Model bundle: pose_landmarker_lite.task in app assets
 
 plugins {
@@ -37,6 +37,6 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
-    implementation("com.google.mediapipe:tasks-vision:latest.release")
+    implementation("com.google.mediapipe:tasks-vision:0.10.26.1")
     implementation(project(":movement"))
 }
