@@ -88,6 +88,10 @@ class CameraCapture(
                     val rotated = rotateBitmap(bitmap, rotation)
                     val mpImage = BitmapImageBuilder(rotated).build()
                     detector.detectAsync(mpImage, nowMs)
+                    if (detector.lastPoseCount() > 1) {
+                        onUpdate(session?.reps ?: 0, "Keep only one person in frame.")
+                        return@setAnalyzer
+                    }
                     val frame = detector.latestPoseFrame(nowMs)
                     if (frame != null) {
                         session?.onFrame(frame)
