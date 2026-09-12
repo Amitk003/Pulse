@@ -20,6 +20,11 @@ data class MovementConfig(
     val hingeStartDeg: Double = 170.0,
     val hingeStartToleranceDeg: Double = 15.0,
     val hingeDownDeg: Double = 120.0,
+    // Form signal thresholds. Starting values for device tuning.
+    val valgusKneeRatio: Double = 0.75,
+    val squatBackRoundKneeDeg: Double = 100.0,
+    val hingeRoundedBackHipDeg: Double = 105.0,
+    val pushUpSagBodyDeg: Double = 155.0,
     // Smoothing and stability.
     val smoothingWindow: Int = 5,
     val minFramesInState: Int = 3,
