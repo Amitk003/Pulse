@@ -17,3 +17,4 @@ rootProject.name = "pulse"
 include(":movement")
 include(":camera")
 include(":app")
+include(":data")
