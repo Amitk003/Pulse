@@ -20,6 +20,17 @@ data class MovementConfig(
     val hingeStartDeg: Double = 170.0,
     val hingeStartToleranceDeg: Double = 15.0,
     val hingeDownDeg: Double = 120.0,
+    // Lunge knee angles.
+    val lungeStartDeg: Double = 170.0,
+    val lungeStartToleranceDeg: Double = 15.0,
+    val lungeDownDeg: Double = 100.0,
+    // Jumping jack shoulder/leg angles.
+    val jumpingJackStartDeg: Double = 30.0,
+    val jumpingJackStartToleranceDeg: Double = 15.0,
+    val jumpingJackDownDeg: Double = 140.0,
+    // AI Fusion parameters.
+    val aiResultMaxAgeMs: Long = 1500L,
+    val minAiRepLikelihood: Double = 0.70,
     // Smoothing and stability.
     val smoothingWindow: Int = 5,
     val minFramesInState: Int = 3,
@@ -31,5 +42,6 @@ data class MovementConfig(
         require(smoothingWindow in 1..15) { "smoothingWindow must be 1..15" }
         require(minFramesInState in 1..30) { "minFramesInState must be 1..30" }
         require(minVisibleLandmarks in 1..33) { "minVisibleLandmarks must be 1..33" }
+        require(aiResultMaxAgeMs > 0L) { "aiResultMaxAgeMs must be positive" }
     }
 }

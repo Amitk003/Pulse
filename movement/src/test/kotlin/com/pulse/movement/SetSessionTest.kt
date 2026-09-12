@@ -23,20 +23,97 @@ class SetSessionTest {
     }
 
     @Test
-    fun fullSetFinishesWithValidResult() {
+    fun fullSetFinishesWithValidAiResult() {
         val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
         val session = SetSession(Exercise.SQUAT, config)
-        var time = 0L
-        // One full squat: stand, down, stand, stand.
+        var time = 1000L
+
+        // Supply a valid, fresh AI analysis result
+        val aiResult = AiAnalysisResult(
+            exercise = "squat",
+            personVisible = true,
+            bodyVisibility = BodyVisibility.FULL_BODY_VISIBLE,
+            cameraUsable = true,
+            exerciseMatch = true,
+            currentForm = CurrentForm.GOOD,
+            formScore = 90,
+            repState = AiRepState.COMPLETED,
+            repLikelihood = 0.95,
+            timestampMs = time
+        )
+        session.updateAiResult(aiResult, timestampMs = time)
+
+        // One full squat sequence: stand, down, stand, stand.
         for (knee in listOf(170.0, 85.0, 170.0, 170.0)) {
+            session.updateAiResult(aiResult, timestampMs = time)
             session.onFrame(frame(time, knee))
-            time += 500L
+            time += 100L
         }
+
         assertEquals(1, session.reps)
         val result = session.finish()
         assertTrue(result.isValid())
         assertEquals("squat", result.exercise)
         assertEquals(1, result.reps)
+    }
+
+    @Test
+    fun couchSittingAnomalyRejectsCandidateRep() {
+        val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1)
+        val session = SetSession(Exercise.SQUAT, config)
+        var time = 1000L
+
+        // AI flags anomaly (sitting on couch)
+        val anomalyResult = AiAnalysisResult(
+            exercise = "squat",
+            personVisible = true,
+            bodyVisibility = BodyVisibility.FULL_BODY_VISIBLE,
+            exerciseMatch = false,
+            anomalyDetected = true,
+            anomalyType = "couch_sitting",
+            repState = AiRepState.INVALID,
+            feedback = "Unrelated movement detected",
+            timestampMs = time
+        )
+        session.updateAiResult(anomalyResult, timestampMs = time)
+
+        for (knee in listOf(170.0, 85.0, 170.0, 170.0)) {
+            session.updateAiResult(anomalyResult, timestampMs = time)
+            session.onFrame(frame(time, knee))
+            time += 100L
+        }
+
+        // Rep candidate must be REJECTED due to anomaly
+        assertEquals(0, session.reps)
+        assertTrue(session.hint.contains("couch_sitting") || session.hint.contains("Unrelated movement"))
+    }
+
+    @Test
+    fun staleAiResultRejectsCandidateRep() {
+        val config = MovementConfig(smoothingWindow = 1, minFramesInState = 1, aiResultMaxAgeMs = 500L)
+        val session = SetSession(Exercise.SQUAT, config)
+
+        // Stale AI result timestamped 10 seconds ago
+        val staleAiResult = AiAnalysisResult(
+            exercise = "squat",
+            personVisible = true,
+            bodyVisibility = BodyVisibility.FULL_BODY_VISIBLE,
+            exerciseMatch = true,
+            repState = AiRepState.COMPLETED,
+            repLikelihood = 0.9,
+            timestampMs = 1000L
+        )
+        session.updateAiResult(staleAiResult, timestampMs = 1000L)
+
+        // Movement frames run at time = 10000L (> 500ms max age)
+        var time = 10000L
+        for (knee in listOf(170.0, 85.0, 170.0, 170.0)) {
+            session.onFrame(frame(time, knee))
+            time += 100L
+        }
+
+        // Candidate rep must be REJECTED because AI result is stale
+        assertEquals(0, session.reps)
     }
 
     @Test

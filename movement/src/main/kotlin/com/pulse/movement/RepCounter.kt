@@ -4,7 +4,9 @@ package com.pulse.movement
 enum class Exercise(val id: String) {
     SQUAT("squat"),
     PUSH_UP("push-up"),
-    HINGE("hinge");
+    HINGE("hinge"),
+    LUNGE("lunge"),
+    JUMPING_JACK("jumping-jack");
 
     companion object {
         fun fromId(id: String): Exercise? = entries.firstOrNull { it.id == id }
@@ -25,7 +27,7 @@ enum class RepPhase {
  * 1. Create one counter per set with the selected exercise.
  * 2. For each analyzed frame, call [onFrame] with the joint angle and visibility result.
  * 3. When visibility fails, the state does not move and no rep is added.
- * 4. Read [reps] for the live count.
+ * 4. Read [reps] for the live count (or [candidateReps] for local unvalidated candidate reps).
  *
  * The class keeps no Android types so it can run in plain unit tests.
  */
@@ -39,6 +41,11 @@ class RepCounter(
     var reps: Int = 0
         private set
 
+    var candidateReps: Int = 0
+        private set
+
+    private var candidatePending = false
+
     var minAngleSeen: Double = Double.MAX_VALUE
         private set
 
@@ -49,18 +56,24 @@ class RepCounter(
         Exercise.SQUAT -> config.squatStartDeg
         Exercise.PUSH_UP -> config.pushUpStartDeg
         Exercise.HINGE -> config.hingeStartDeg
+        Exercise.LUNGE -> config.lungeStartDeg
+        Exercise.JUMPING_JACK -> config.jumpingJackStartDeg
     }
 
     fun startTolerance(): Double = when (exercise) {
         Exercise.SQUAT -> config.squatStartToleranceDeg
         Exercise.PUSH_UP -> config.pushUpStartToleranceDeg
         Exercise.HINGE -> config.hingeStartToleranceDeg
+        Exercise.LUNGE -> config.lungeStartToleranceDeg
+        Exercise.JUMPING_JACK -> config.jumpingJackStartToleranceDeg
     }
 
     fun downAngle(): Double = when (exercise) {
         Exercise.SQUAT -> config.squatDownDeg
         Exercise.PUSH_UP -> config.pushUpDownDeg
         Exercise.HINGE -> config.hingeDownDeg
+        Exercise.LUNGE -> config.lungeDownDeg
+        Exercise.JUMPING_JACK -> config.jumpingJackDownDeg
     }
 
     /**
@@ -106,7 +119,8 @@ class RepCounter(
             }
             RepPhase.UP -> {
                 if (nearStart && stable) {
-                    reps += 1
+                    candidateReps += 1
+                    candidatePending = true
                     phase = RepPhase.READY
                     framesInPhase = 0
                     minAngleSeen = Double.MAX_VALUE
@@ -117,6 +131,21 @@ class RepCounter(
             }
         }
         return phase
+    }
+
+    /** Returns true if a local candidate rep has reached completion and is pending AI validation. */
+    fun hasPendingCandidateRep(): Boolean = candidatePending
+
+    /** Consumes the pending candidate rep flag. */
+    fun consumePendingCandidateRep(): Boolean {
+        val pending = candidatePending
+        candidatePending = false
+        return pending
+    }
+
+    /** Increments the authoritative validated rep count. Called by SetSession after AI validation. */
+    fun incrementAuthoritativeRep() {
+        reps += 1
     }
 
     /** Lowest smoothed angle seen during the current rep cycle, or null when no rep is active. */
@@ -130,6 +159,8 @@ class RepCounter(
     fun reset() {
         phase = RepPhase.READY
         reps = 0
+        candidateReps = 0
+        candidatePending = false
         minAngleSeen = Double.MAX_VALUE
         recentAngles.clear()
         framesInPhase = 0

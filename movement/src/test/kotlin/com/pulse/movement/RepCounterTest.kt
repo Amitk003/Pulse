@@ -30,9 +30,14 @@ class RepCounterTest {
     }
 
     @Test
-    fun fullSquatCountsOneRep() {
+    fun fullSquatTriggersCandidateRep() {
         val counter = RepCounter(Exercise.SQUAT, MovementConfig(smoothingWindow = 1, minFramesInState = 1))
         feed(counter, listOf(170.0, 90.0, 170.0, 170.0))
+        assertEquals(1, counter.candidateReps)
+        assertEquals(true, counter.hasPendingCandidateRep())
+        assertEquals(0, counter.reps) // Authoritative reps start at 0 until AI validates
+
+        counter.incrementAuthoritativeRep()
         assertEquals(1, counter.reps)
     }
 
@@ -40,6 +45,7 @@ class RepCounterTest {
     fun halfSquatDoesNotCount() {
         val counter = RepCounter(Exercise.SQUAT, MovementConfig(smoothingWindow = 1, minFramesInState = 1))
         feed(counter, listOf(170.0, 130.0, 170.0, 170.0))
+        assertEquals(0, counter.candidateReps)
         assertEquals(0, counter.reps)
     }
 
@@ -50,6 +56,7 @@ class RepCounterTest {
         counter.onFrame(90.0, blocked())
         counter.onFrame(170.0, visible())
         counter.onFrame(170.0, visible())
+        assertEquals(0, counter.candidateReps)
         assertEquals(0, counter.reps)
     }
 
@@ -58,13 +65,13 @@ class RepCounterTest {
         val config = MovementConfig(smoothingWindow = 3, minFramesInState = 2)
         val counter = RepCounter(Exercise.SQUAT, config)
         feed(counter, listOf(170.0, 170.0, 90.0, 92.0, 88.0, 170.0, 170.0, 170.0, 170.0))
-        assertEquals(1, counter.reps)
+        assertEquals(1, counter.candidateReps)
     }
 
     @Test
-    fun fullPushUpCountsOneRep() {
+    fun fullPushUpTriggersCandidateRep() {
         val counter = RepCounter(Exercise.PUSH_UP, MovementConfig(smoothingWindow = 1, minFramesInState = 1))
         feed(counter, listOf(160.0, 85.0, 160.0, 160.0))
-        assertEquals(1, counter.reps)
+        assertEquals(1, counter.candidateReps)
     }
 }

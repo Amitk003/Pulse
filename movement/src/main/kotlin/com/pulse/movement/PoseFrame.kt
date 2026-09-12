@@ -20,18 +20,41 @@ data class PoseFrame(
 ) {
     /**
      * Joint angle for the given exercise, or null when points are missing.
-     * Squat uses hip-knee-ankle. Push-up uses shoulder-elbow-wrist.
-     * Hinge uses shoulder-hip-knee.
+     * Evaluates bilateral sides (left vs right) and selects the side with valid points.
      */
     fun angleFor(exercise: Exercise): Double? {
-        val triple = when (exercise) {
-            Exercise.SQUAT -> Triple("left_hip", "left_knee", "left_ankle")
-            Exercise.PUSH_UP -> Triple("left_shoulder", "left_elbow", "left_wrist")
-            Exercise.HINGE -> Triple("left_shoulder", "left_hip", "left_knee")
+        val (leftKeys, rightKeys) = when (exercise) {
+            Exercise.SQUAT, Exercise.LUNGE -> Pair(
+                Triple("left_hip", "left_knee", "left_ankle"),
+                Triple("right_hip", "right_knee", "right_ankle")
+            )
+            Exercise.PUSH_UP -> Pair(
+                Triple("left_shoulder", "left_elbow", "left_wrist"),
+                Triple("right_shoulder", "right_elbow", "right_wrist")
+            )
+            Exercise.HINGE -> Pair(
+                Triple("left_shoulder", "left_hip", "left_knee"),
+                Triple("right_shoulder", "right_hip", "right_knee")
+            )
+            Exercise.JUMPING_JACK -> Pair(
+                Triple("left_hip", "left_shoulder", "left_elbow"),
+                Triple("right_hip", "right_shoulder", "right_elbow")
+            )
         }
-        val first = joints[triple.first] ?: return null
-        val middle = joints[triple.second] ?: return null
-        val last = joints[triple.third] ?: return null
+
+        // Try left side first
+        val leftAngle = calculateTripleAngle(leftKeys)
+        if (leftAngle != null) {
+            return leftAngle
+        }
+        // Fallback to right side
+        return calculateTripleAngle(rightKeys)
+    }
+
+    private fun calculateTripleAngle(keys: Triple<String, String, String>): Double? {
+        val first = joints[keys.first] ?: return null
+        val middle = joints[keys.second] ?: return null
+        val last = joints[keys.third] ?: return null
         return Angles.jointAngle(first, middle, last)
     }
 }

@@ -38,11 +38,14 @@ data class AnalyzerStats(
  */
 class CameraCapture(
     private val detector: MediapipePoseDetector,
-    private val config: MovementConfig = MovementConfig()
+    private val config: MovementConfig = MovementConfig(),
+    private val aiAnalyzer: GeminiFormAnalyzer = GeminiFormAnalyzer()
 ) {
     private val worker = Executors.newSingleThreadExecutor()
     private val inFlight = AtomicBoolean(false)
     private val throttler = FrameThrottler(minIntervalMs = 50L)
+    private val clipBuffer = RepClipBuffer()
+    private var lastAiTriggerMs: Long = 0L
     private var session: SetSession? = null
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -57,7 +60,9 @@ class CameraCapture(
         detector.setup(context)
         session = SetSession(exercise, config)
         throttler.reset()
+        clipBuffer.clear()
         inFlight.set(false)
+        lastAiTriggerMs = 0L
 
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -85,15 +90,31 @@ class CameraCapture(
                     val rotation = imageProxy.imageInfo.rotationDegrees
                     val bitmap = imageProxy.toBitmap()
                     val rotated = rotateBitmap(bitmap, rotation)
+
+                    // Add frame to rolling temporal clip buffer for Gemini AI
+                    clipBuffer.addFrame(rotated)
+
+                    // Local MediaPipe landmark detection
                     val mpImage = BitmapImageBuilder(rotated).build()
                     detector.detectAsync(mpImage, nowMs)
                     val frame = detector.latestPoseFrame(nowMs)
+
                     if (frame != null) {
                         session?.onFrame(frame)
                         val reps = session?.reps ?: 0
                         val hint = session?.hint ?: ""
                         onUpdate(reps, hint)
                     }
+
+                    // Periodically trigger Gemini AI analysis (~600ms gap)
+                    if (nowMs - lastAiTriggerMs >= 600L) {
+                        lastAiTriggerMs = nowMs
+                        val clip = clipBuffer.getClip()
+                        aiAnalyzer.analyzeAsync(exercise.id, clip) { aiResult ->
+                            session?.updateAiResult(aiResult, System.currentTimeMillis())
+                        }
+                    }
+
                 } finally {
                     inFlight.set(false)
                     imageProxy.close()
@@ -143,6 +164,7 @@ class CameraCapture(
     fun close() {
         stop()
         detector.close()
+        aiAnalyzer.close()
         worker.shutdown()
     }
 }
