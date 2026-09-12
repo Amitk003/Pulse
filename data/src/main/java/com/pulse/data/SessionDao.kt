@@ -3,6 +3,7 @@ package com.pulse.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /** Reads and writes for finished sessions. */
 @Dao
@@ -19,4 +20,8 @@ interface SessionDao {
 
     @Query("SELECT COUNT(*) FROM sessions WHERE timestamp >= :since")
     suspend fun countSince(since: Long): Int
+
+    /** Live feed of the most recent sessions, newest first. */
+    @Query("SELECT * FROM sessions ORDER BY timestamp DESC LIMIT :limit")
+    fun watchRecent(limit: Int): Flow<List<SessionEntity>>
 }
