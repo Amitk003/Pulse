@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.pulse.camera.AnalyzerStats
 import com.pulse.camera.CameraCapture
 import com.pulse.camera.MediapipePoseDetector
 import com.pulse.movement.Exercise
@@ -66,6 +67,7 @@ private fun PulseApp() {
     var screen by remember { mutableStateOf(Screen.SELECT) }
     var exercise by remember { mutableStateOf(Exercise.SQUAT) }
     var result by remember { mutableStateOf<SetResult?>(null) }
+    var stats by remember { mutableStateOf(AnalyzerStats(accepted = 0, dropped = 0)) }
     when (screen) {
         Screen.SELECT -> SelectScreen(
             onPick = {
@@ -75,14 +77,16 @@ private fun PulseApp() {
         )
         Screen.RECORD -> RecordScreen(
             exercise = exercise,
-            onFinish = {
-                result = it
+            onFinish = { finished, finishedStats ->
+                result = finished
+                stats = finishedStats
                 screen = Screen.RESULT
             },
             onCancel = { screen = Screen.SELECT }
         )
         Screen.RESULT -> ResultScreen(
             result = result,
+            stats = stats,
             onAgain = { screen = Screen.RECORD },
             onSelect = { screen = Screen.SELECT }
         )
@@ -114,7 +118,7 @@ private fun SelectScreen(onPick: (Exercise) -> Unit) {
 @Composable
 private fun RecordScreen(
     exercise: Exercise,
-    onFinish: (SetResult?) -> Unit,
+    onFinish: (SetResult?, AnalyzerStats) -> Unit,
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current
@@ -205,7 +209,7 @@ private fun RecordScreen(
                 Button(
                     onClick = {
                         capture.stop()
-                        onFinish(capture.finish())
+                        onFinish(capture.finish(), capture.stats())
                     },
                     modifier = Modifier.weight(1f)
                 ) { Text("Finish set") }
@@ -220,6 +224,7 @@ private fun RecordScreen(
 @Composable
 private fun ResultScreen(
     result: SetResult?,
+    stats: AnalyzerStats,
     onAgain: () -> Unit,
     onSelect: () -> Unit
 ) {
@@ -236,6 +241,7 @@ private fun ResultScreen(
             Spacer(Modifier.height(8.dp))
             Text("Form score: ${result.formScore}")
             Text("Time: ${result.durationSec}s")
+            Text("Analyzer: ${stats.accepted} frames, ${stats.dropped} dropped")
             Spacer(Modifier.height(8.dp))
             if (result.mistakes.isEmpty()) {
                 Text("Clean set. No mistakes found.")
