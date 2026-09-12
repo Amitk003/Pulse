@@ -11,6 +11,7 @@ import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.pulse.movement.Exercise
 import com.pulse.movement.FrameThrottler
 import com.pulse.movement.MovementConfig
+import com.pulse.movement.SetResult
 import com.pulse.movement.SetSession
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -123,6 +124,19 @@ class CameraCapture(
 
     fun stats(): AnalyzerStats {
         return AnalyzerStats(accepted = throttler.accepted, dropped = throttler.dropped)
+    }
+
+    /**
+     * Finish the current set and build its result.
+     * Returns null when no set ran or the result is invalid.
+     * Safe to call on the main thread. Call after [stop].
+     */
+    fun finish(): SetResult? {
+        return try {
+            session?.finish()
+        } catch (e: IllegalStateException) {
+            null
+        }
     }
 
     /**
