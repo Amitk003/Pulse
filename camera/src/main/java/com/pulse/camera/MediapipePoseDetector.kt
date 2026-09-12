@@ -122,11 +122,17 @@ class MediapipePoseDetector(
         }
         return mapOf(
             "left_shoulder" to point(11),
+            "right_shoulder" to point(12),
             "left_elbow" to point(13),
+            "right_elbow" to point(14),
             "left_wrist" to point(15),
+            "right_wrist" to point(16),
             "left_hip" to point(23),
+            "right_hip" to point(24),
             "left_knee" to point(25),
-            "left_ankle" to point(27)
+            "right_knee" to point(26),
+            "left_ankle" to point(27),
+            "right_ankle" to point(28)
         )
     }
 }

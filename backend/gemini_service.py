@@ -116,40 +116,52 @@ class GeminiService:
 
         prompt = f"Requested Exercise: {exercise}\nNumber of Sequential Frames: {len(images)}\nAnalyze this movement sequence against the system rules."
         
-        try:
-            client = self._get_client()
-            # Try new google-genai SDK
-            if hasattr(client, "models"):
-                contents = [SYSTEM_PROMPT, prompt] + images
-                response = client.models.generate_content(
-                    model=self.model_name,
-                    contents=contents,
-                    config={"response_mime_type": "application/json"}
-                )
-                text_response = response.text
-            else:
-                # Fallback for legacy generativeai SDK if present
-                model = client.GenerativeModel(
-                    model_name=self.model_name,
-                    system_instruction=SYSTEM_PROMPT
-                )
-                contents = [prompt] + images
-                response = model.generate_content(contents)
-                text_response = response.text
+        models_to_try = [
+            self.model_name,
+            "gemini-3.6-flash",
+            "gemini-2.5-flash"
+        ]
+        # Remove duplicates while preserving order
+        seen = set()
+        models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
-            return self._parse_response(exercise, text_response)
+        last_exception = None
+        for model in models_to_try:
+            try:
+                client = self._get_client()
+                if hasattr(client, "models"):
+                    contents = [SYSTEM_PROMPT, prompt] + images
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=contents,
+                        config={"response_mime_type": "application/json"}
+                    )
+                    text_response = response.text
+                else:
+                    gen_model = client.GenerativeModel(
+                        model_name=model,
+                        system_instruction=SYSTEM_PROMPT
+                    )
+                    contents = [prompt] + images
+                    response = gen_model.generate_content(contents)
+                    text_response = response.text
 
-        except Exception as e:
-            print(f"Gemini API Exception: {e}")
-            return AiAnalysisResponse(
-                exercise=exercise,
-                person_visible=True,
-                body_visibility=BodyVisibilityEnum.UNKNOWN,
-                camera_usable=True,
-                camera_warning=f"AI service temporarily degraded: {str(e)}",
-                errors=[str(e)],
-                feedback="AI service currently unavailable."
-            )
+                return self._parse_response(exercise, text_response)
+
+            except Exception as e:
+                last_exception = e
+                print(f"Gemini API model {model} warning: {e}")
+
+        # If all models failed, return graceful degraded schema
+        return AiAnalysisResponse(
+            exercise=exercise,
+            person_visible=True,
+            body_visibility=BodyVisibilityEnum.UNKNOWN,
+            camera_usable=True,
+            camera_warning=f"AI service temporarily degraded: {str(last_exception)}",
+            errors=[str(last_exception)],
+            feedback="AI service currently unavailable."
+        )
 
     def _parse_response(self, exercise: str, raw_text: str) -> AiAnalysisResponse:
         try:
