@@ -11,7 +11,9 @@ package com.pulse.movement
  * @param landmarks 33 visibility values for the full body gate.
  * @param joints named 2D points used for angle math. Expected keys:
  * left_hip, left_knee, left_ankle, left_shoulder, left_elbow,
- * left_wrist. Any missing key means that joint is unclear.
+ * left_wrist. Optional keys for front-view checks: right_hip,
+ * right_knee, right_ankle, right_shoulder, right_elbow, right_wrist.
+ * Any missing key means that joint is unclear.
  */
 data class PoseFrame(
     val timeMs: Long,

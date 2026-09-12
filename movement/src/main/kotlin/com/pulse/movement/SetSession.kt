@@ -5,7 +5,9 @@ package com.pulse.movement
  *
  * Wiring: PoseFrame to visibility check to rep counter.
  * Form observations are collected per counted rep from the
- * lowest angle seen in that rep cycle. At the end, [finish]
+ * lowest angle seen in that rep cycle. Geometry faults from
+ * FormSignals latch while a rep is active, so one bad frame
+ * inside a rep marks that rep. At the end, [finish]
  * scores form and returns one valid [SetResult].
  *
  * Camera and MediaPipe types never enter this class.
@@ -17,6 +19,9 @@ class SetSession(
     private val counter = RepCounter(exercise, config)
     private val observations = mutableListOf<FormScorer.RepObservation>()
     private var lastDepth: Double? = null
+    private var latchedValgus: Boolean = false
+    private var latchedBack: Boolean = false
+    private var latchedSagging: Boolean = false
     private var startMs: Long? = null
     private var endMs: Long? = null
     var blockedFrames: Int = 0
@@ -48,17 +53,38 @@ class SetSession(
         val angle = frame.angleFor(exercise)
         counter.onFrame(angle, visibility)
 
+        if (counter.phase != RepPhase.READY) {
+            val faults = FormSignals.faultsFor(exercise, frame.joints, angle, config)
+            latchedValgus = latchedValgus || faults.kneeValgus
+            latchedBack = latchedBack || faults.backRound
+            latchedSagging = latchedSagging || faults.sagging
+        }
+
         val depth = counter.currentDepth()
         if (depth != null) {
             lastDepth = depth
         }
         if (counter.reps > repsBefore) {
             observations.add(
-                FormScorer.RepObservation(minAngleDeg = lastDepth ?: angle ?: 180.0)
+                FormScorer.RepObservation(
+                    minAngleDeg = lastDepth ?: angle ?: 180.0,
+                    kneeValgus = latchedValgus,
+                    backRound = latchedBack,
+                    sagging = latchedSagging
+                )
             )
             lastDepth = null
+            clearLatchedFaults()
+        } else if (counter.phase == RepPhase.READY) {
+            clearLatchedFaults()
         }
         return counter.phase
+    }
+
+    private fun clearLatchedFaults() {
+        latchedValgus = false
+        latchedBack = false
+        latchedSagging = false
     }
 
     /** Build the final result for storage and progress. */
