@@ -20,25 +20,28 @@ data class PoseDetection(
  * MediaPipe Pose Landmarker wrapper for live camera frames.
  *
  * Uses the tasks-vision library with RunningMode LIVE_STREAM and the
- * pose_landmarker_lite.task bundle. The lite bundle is picked first
- * because it is fast enough for 15 to 20 analyzed frames per second
- * on a mid range phone. Full and heavy bundles stay as later options.
+ * pose_landmarker_full.task bundle.
  *
  * This class owns only pose mapping. Rep counting and scoring live
  * in the movement module. All processing stays on the device and no
  * frame or landmark is saved or uploaded.
  *
- * Model file: place pose_landmarker_lite.task in app/src/main/assets.
+ * Model file: place pose_landmarker_full.task in app/src/main/assets.
  * Dependency: com.google.mediapipe:tasks-vision:0.10.26.1.
+ *
+ * Note: the full model is larger and more expensive than lite. It is
+ * currently the selected model for this app. If device performance or
+ * app size becomes a problem, revisit the model choice before changing
+ * thresholds.
  */
 class MediapipePoseDetector(
-    private val minPoseDetectionConfidence: Float = 0.5f,
-    private val minPosePresenceConfidence: Float = 0.5f,
-    private val minTrackingConfidence: Float = 0.5f
+    private val minPoseDetectionConfidence: Float = 0.6f,
+    private val minPosePresenceConfidence: Float = 0.6f,
+    private val minTrackingConfidence: Float = 0.6f
 ) : AutoCloseable {
 
     companion object {
-        const val MODEL_ASSET_PATH = "pose_landmarker_lite.task"
+    const val MODEL_ASSET_PATH = "pose_landmarker_full.task"
         const val NUM_POSES = 1
         const val LANDMARK_COUNT = 33
     }

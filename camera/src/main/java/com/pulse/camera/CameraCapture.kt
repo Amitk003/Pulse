@@ -45,7 +45,7 @@ class CameraCapture(
 ) {
     private val worker = Executors.newSingleThreadExecutor()
     private val inFlight = AtomicBoolean(false)
-    private val throttler = FrameThrottler(minIntervalMs = 50L)
+    private val throttler = FrameThrottler(minIntervalMs = 40L)
     private val acceptingResults = AtomicBoolean(false)
     private val idleLock = Object()
     private var session: SetSession? = null

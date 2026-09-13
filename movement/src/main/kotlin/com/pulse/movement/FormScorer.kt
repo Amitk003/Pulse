@@ -7,6 +7,9 @@ package com.pulse.movement
  * squat uses `shallow`, `knee-valgus`, `back-round`;
  * push-up uses `half-rep`, `sagging`, `incomplete`;
  * hinge uses `half-rep`, `rounded-back`.
+ *
+ * Thresholds were adjusted after switching to pose_landmarker_full.task.
+ * They are still starting values, not final device-validated numbers.
  */
 object FormScorer {
 
@@ -34,41 +37,43 @@ object FormScorer {
         for (rep in observations) {
             when (exercise) {
                 Exercise.SQUAT -> {
-                    if (rep.minAngleDeg > 100.0) {
+                    // Tighter threshold: only flag very shallow squats
+                    if (rep.minAngleDeg > 105.0) {
                         mistakes.add("shallow")
                         penalty += 15
                     }
                     if (rep.kneeValgus) {
                         mistakes.add("knee-valgus")
-                        penalty += 10
+                        penalty += 12
                     }
                     if (rep.backRound) {
                         mistakes.add("back-round")
-                        penalty += 10
+                        penalty += 12
                     }
                 }
                 Exercise.PUSH_UP -> {
-                    if (rep.minAngleDeg > 100.0) {
+                    if (rep.minAngleDeg > 95.0) {
                         mistakes.add("half-rep")
                         penalty += 15
                     }
                     if (rep.sagging) {
                         mistakes.add("sagging")
-                        penalty += 10
+                        penalty += 12
                     }
-                    if (rep.minAngleDeg in 90.0..100.0) {
+                    // Incomplete: between half-rep and full depth
+                    if (rep.minAngleDeg in 85.0..95.0) {
                         mistakes.add("incomplete")
-                        penalty += 5
+                        penalty += 8
                     }
                 }
                 Exercise.HINGE -> {
-                    if (rep.minAngleDeg > 125.0) {
+                    if (rep.minAngleDeg > 120.0) {
                         mistakes.add("half-rep")
                         penalty += 15
                     }
                     if (rep.backRound) {
                         mistakes.add("rounded-back")
-                        penalty += 10
+                        penalty += 12
                     }
                 }
             }

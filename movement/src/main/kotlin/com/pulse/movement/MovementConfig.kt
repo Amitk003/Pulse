@@ -6,31 +6,35 @@ package com.pulse.movement
  * Keep thresholds in this one file so device tests can tune them
  * without changing the state machine or scoring code.
  * All angles use degrees.
+ *
+ * Values were adjusted after switching to pose_landmarker_full.task.
+ * They are still starting values, not final device-validated numbers.
  */
 data class MovementConfig(
     // Squat knee angles.
-    val squatStartDeg: Double = 170.0,
-    val squatStartToleranceDeg: Double = 15.0,
-    val squatDownDeg: Double = 95.0,
+    // Tighter tolerance for more accurate rep detection
+    val squatStartDeg: Double = 165.0,
+    val squatStartToleranceDeg: Double = 12.0,
+    val squatDownDeg: Double = 90.0,
     // Push-up elbow angles.
-    val pushUpStartDeg: Double = 160.0,
-    val pushUpStartToleranceDeg: Double = 18.0,
-    val pushUpDownDeg: Double = 90.0,
+    val pushUpStartDeg: Double = 155.0,
+    val pushUpStartToleranceDeg: Double = 15.0,
+    val pushUpDownDeg: Double = 85.0,
     // Hinge hip angles.
-    val hingeStartDeg: Double = 170.0,
-    val hingeStartToleranceDeg: Double = 15.0,
-    val hingeDownDeg: Double = 120.0,
-    // Form signal thresholds. Starting values for device tuning.
-    val valgusKneeRatio: Double = 0.75,
-    val squatBackRoundKneeDeg: Double = 100.0,
-    val hingeRoundedBackHipDeg: Double = 105.0,
-    val pushUpSagBodyDeg: Double = 155.0,
-    // Smoothing and stability.
-    val smoothingWindow: Int = 5,
-    val minFramesInState: Int = 3,
-    // Visibility gate. See VisibilityGate for details.
-    val minVisibleLandmarks: Int = 20,
-    val minVisibility: Float = 0.5f
+    val hingeStartDeg: Double = 165.0,
+    val hingeStartToleranceDeg: Double = 12.0,
+    val hingeDownDeg: Double = 115.0,
+    // Form signal thresholds. Tighter for better form scoring.
+    val valgusKneeRatio: Double = 0.70,
+    val squatBackRoundKneeDeg: Double = 95.0,
+    val hingeRoundedBackHipDeg: Double = 100.0,
+    val pushUpSagBodyDeg: Double = 150.0,
+    // Smoothing and stability. Larger window = smoother but more lag.
+    val smoothingWindow: Int = 4,
+    val minFramesInState: Int = 2,
+    // Visibility gate. Higher = stricter visibility requirements.
+    val minVisibleLandmarks: Int = 22,
+    val minVisibility: Float = 0.55f
 ) {
     init {
         require(smoothingWindow in 1..15) { "smoothingWindow must be 1..15" }
