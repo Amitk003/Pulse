@@ -3,9 +3,8 @@ package com.pulse.app
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import com.pulse.bridge.BridgeJson
 import com.pulse.bridge.PlayerSnapshot
-import org.json.JSONArray
-import org.json.JSONObject
 
 /**
  * Launches the Unity arena.
@@ -99,23 +98,6 @@ internal object ArenaLauncher {
             unlockedAbilities = emptyList(),
             updatedAtEpochMs = System.currentTimeMillis()
         )
-        return snapshot.toJson()
-    }
-
-    private fun PlayerSnapshot.toJson(): String {
-        return JSONObject().apply {
-            put("schemaVersion", schemaVersion)
-            put("playerId", playerId)
-            put("cloneLevel", cloneLevel)
-            put("strength", strength)
-            put("formMastery", formMastery)
-            put("consistency", consistency)
-            put("recovery", recovery)
-            put("gameXp", gameXp)
-            put("unlockedAbilities", JSONArray().apply {
-                unlockedAbilities.forEach { put(it) }
-            })
-            put("updatedAtEpochMs", updatedAtEpochMs)
-        }.toString()
+        return BridgeJson.playerSnapshotToJson(snapshot)
     }
 }

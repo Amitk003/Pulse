@@ -9,6 +9,9 @@ namespace AdventureGame
     /// </summary>
     public class PulseBridge : MonoBehaviour
     {
+        /// <summary>Must match CURRENT_BRIDGE_SCHEMA in the bridge module.</summary>
+        public const int CurrentBridgeSchema = 1;
+
         public static PulseBridge Instance { get; private set; }
         
         [Header("Pulse Data (received from Android)")]
@@ -18,6 +21,7 @@ namespace AdventureGame
         public float consistency = 0.5f;
         public float recovery = 1f;
         public int gameXp = 0;
+        public string playerId = "player_1";
         
         [Header("Debug")]
         public bool useTestData = false;
@@ -76,6 +80,7 @@ namespace AdventureGame
             consistency = data.consistency;
             recovery = data.recovery;
             gameXp = data.gameXp;
+            playerId = string.IsNullOrWhiteSpace(data.playerId) ? "player_1" : data.playerId;
             
             Debug.Log($"[PulseBridge] Loaded snapshot: Level {cloneLevel}, STR {strength}, XP {gameXp}");
             
@@ -118,10 +123,15 @@ namespace AdventureGame
         {
             var result = new FightResultData
             {
+                schemaVersion = CurrentBridgeSchema,
+                matchId = System.Guid.NewGuid().ToString("N"),
+                playerId = playerId,
+                opponentId = "arena_boss",
                 outcome = outcome,
                 playerPower = strength,
                 playerSkill = formMastery / 100f,
-                durationSec = Mathf.RoundToInt(duration)
+                durationSec = Mathf.RoundToInt(duration),
+                createdAtEpochMs = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
             
             string json = JsonUtility.ToJson(result);
@@ -186,10 +196,15 @@ namespace AdventureGame
         [System.Serializable]
         public class FightResultData
         {
+            public int schemaVersion;
+            public string matchId;
+            public string playerId;
+            public string opponentId;
             public string outcome;
             public float playerPower;
             public float playerSkill;
             public int durationSec;
+            public long createdAtEpochMs;
         }
     }
 }
