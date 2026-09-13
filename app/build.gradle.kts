@@ -39,6 +39,11 @@ dependencies {
     implementation(project(":movement"))
     implementation(project(":camera"))
     implementation(project(":data"))
+    implementation(project(":bridge"))
+    
+    // Unity Android Library (uncomment after exporting from Unity)
+    // implementation(project(":unity"))
+    // implementation(fileTree(dir: "libs", include: ["*.jar"]))
 
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)
@@ -52,6 +57,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.camera:camera-view:1.3.4")
+    
+    // JSON parsing for bridge
+    implementation("org.json:json:20231013")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

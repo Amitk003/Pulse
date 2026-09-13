@@ -126,8 +126,20 @@ fun PulseApp(viewModel: PulseViewModel) {
                     arenaMessage = arenaMessage,
                     onPlayArena = {
                         haptics(PulseHaptic.LIGHT)
-                        arenaMessage = when (ArenaLauncher.launch(context)) {
+                        // Demo wiring: replace player_1 with a real identity later.
+                        val clone = viewModel.clone.value
+                        val snapshot = ArenaLauncher.createPlayerSnapshot(
+                            playerId = "player_1",
+                            cloneLevel = clone.level,
+                            strength = clone.strength,
+                            formMastery = clone.formMastery,
+                            consistency = clone.consistency,
+                            recovery = clone.recovery,
+                            gameXp = clone.xp
+                        )
+                        arenaMessage = when (ArenaLauncher.launch(context, snapshot)) {
                             ArenaLauncher.Result.LAUNCHED -> null
+                            ArenaLauncher.Result.EMBEDDED_LAUNCHED -> null
                             ArenaLauncher.Result.NOT_INSTALLED ->
                                 "Install the Pulse Arena game first, then try again."
                         }
