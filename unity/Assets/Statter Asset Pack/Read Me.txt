@@ -1,0 +1,17 @@
+This asset package is a starter template containing assets from multiple sources.
+
+### 🧑‍💻 Component Licensing (My Work)
+All custom components, scripts, camera setup, and controller logic created by **The Pro GameDev** are available under the **Creative Commons Zero (CC0) License**, allowing users to freely reuse, modify, and distribute these components without restriction.
+
+### 🎭 Third-Party Asset Licensing (Animations and Models)
+
+The following assets are used under their respective End-User License Agreements (EULAs) and **ARE NOT covered by the CC0 license**:
+
+| Assets | Source | License Restriction |
+| :--- | :--- | :--- |
+| **Animations** (Idle, Walk, Sprint, Falling) and **Player Model**| **Kevin Iglesias** (Human Basic Motion Pack) | May be used in a final product, but **may not be extracted and redistributed** as a standalone asset. |
+
+
+**Credits:**
+* **Animations:** Kevin Iglesias
+* Asset Store Link: https://assetstore.unity.com/packages/3d/animations/human-basic-motions-157744
