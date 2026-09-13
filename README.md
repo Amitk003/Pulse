@@ -27,12 +27,18 @@ The result is more than a workout counter. Each good set helps build a personal 
 
 ## Current product foundation
 
-The repository contains four focused modules:
+The repository hosts the Android app **and** the Unity arena game in one
+monorepo (Unity lives in `unity/`). See [docs/unity-monorepo.md](docs/unity-monorepo.md).
+
+The Android side has four focused modules:
 
 - `movement` contains platform-free pose rules, visibility checks, rep counters, form checks, and unit tests.
 - `camera` connects CameraX to the local MediaPipe Pose Landmarker and sends small pose results to the movement module.
 - `data` stores finished sets and clone progress with Room and settings with DataStore.
 - `app` provides the Android screens for exercise selection, recording, and results.
+
+The `bridge` module owns the shared `PlayerSnapshot` / `FightResult` contract
+that Pulse sends to, and receives from, the Unity game.
 
 The first supported exercises are squat, push-up, and hinge movement. Their thresholds are starting values and must be checked on real phones before they are treated as final.
 
@@ -71,6 +77,7 @@ The movement tests do not need a phone. Camera, permission, storage, and full ap
 - [Pose and camera](docs/pose-camera.md)
 - [Local data](docs/local-data.md)
 - [Android and Unity integration](docs/unity-integration.md)
+- [Unity + Android monorepo](docs/unity-monorepo.md)
 - [Roadmap](docs/roadmap.md)
 - [Development guide](docs/development.md)
 - [Testing guide](docs/testing.md)

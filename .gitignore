@@ -15,3 +15,27 @@ local.properties
 # OS files.
 .DS_Store
 Thumbs.db
+
+# --- Unity project (nested under unity/) ---
+# Regenerated / per-machine folders. Keep them out of git.
+unity/Library/
+unity/Temp/
+unity/Logs/
+unity/Build/
+unity/Builds/
+unity/obj/
+unity/UserSettings/
+unity/.vs/
+unity/.vscode/
+unity/PulseUnityExport/
+
+# Unity generates these project files; only Assets, Packages, ProjectSettings
+# and their .meta files are source.
+unity/*.csproj
+unity/*.sln
+unity/*.slnx
+unity/*.unityproj
+unity/*.userprefs
+unity/*.unitypackage
+unity/*.apk
+unity/*.aab

@@ -111,4 +111,19 @@ object CloneStateManager {
         )
         return next to info
     }
+
+    /**
+     * Apply a finished arena fight reward to the clone without touching workout
+     * history. Pure and bridge-agnostic: the caller decides which reward a result
+     * earns via [FightRewards], then this moves XP and stats.
+     */
+    fun applyFightReward(state: CloneState, reward: FightReward): CloneState {
+        val xp = state.xp + reward.xpGained
+        return state.copy(
+            xp = xp,
+            level = xp / XP_PER_LEVEL + 1,
+            strength = state.strength + reward.strengthGain,
+            formMastery = (state.formMastery + reward.formMasteryGain).coerceIn(0f, 100f)
+        )
+    }
 }

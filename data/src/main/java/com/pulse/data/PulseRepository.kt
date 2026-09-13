@@ -2,6 +2,7 @@ package com.pulse.data
 
 import android.content.Context
 import androidx.room.Room
+import com.pulse.bridge.FightResult
 import com.pulse.movement.SetResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,24 @@ class PulseRepository(context: Context) {
         } else {
             clones.moveLastTrained(current.lastTrainedAt - days * DecayManager.DAY_MS)
         }
+    }
+
+    /**
+     * Apply a fight result returned from Unity.
+     *
+     * A fair win upgrades attack and defence (strength and formMastery) and pays
+     * XP; a draw and a loss pay smaller amounts. Abandoned or early-closed fights
+     * earn nothing and never count as a win or a loss. Pulse stays the source of
+     * truth for progress.
+     *
+     * @return the reward applied, or null when the result earned nothing.
+     */
+    suspend fun applyFightResult(fight: FightResult): FightReward? {
+        val reward = FightRewards.fromResult(fight) ?: return null
+        val stored = clones.get()
+        val state = stored?.toState() ?: CloneStateManager.fresh()
+        clones.save(CloneStateManager.applyFightReward(state, reward).toEntity())
+        return reward
     }
 
     /**

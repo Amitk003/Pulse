@@ -137,8 +137,26 @@ fun PulseApp(viewModel: PulseViewModel) {
                             recovery = clone.recovery,
                             gameXp = clone.xp
                         )
+                        ArenaLauncher.pendingResultCallback = { json ->
+                            if (json != null) {
+                                viewModel.applyFightResult(json) { reward ->
+                                    arenaMessage = when {
+                                        reward == null ->
+                                            "Arena closed with no result. No XP given."
+                                        reward.xpGained >= com.pulse.data.FightRewards.WIN_XP ->
+                                            "Arena won! +${reward.xpGained} XP."
+                                        reward.xpGained > 0 ->
+                                            "Arena done. +${reward.xpGained} XP."
+                                        else -> "Arena closed. No XP given."
+                                    }
+                                }
+                            } else {
+                                arenaMessage =
+                                    "Back from arena. Fight result not returned by this build."
+                            }
+                        }
                         arenaMessage = when (ArenaLauncher.launch(context, snapshot)) {
-                            ArenaLauncher.Result.LAUNCHED -> null
+                            ArenaLauncher.Result.LAUNCHED -> "Arena launched. Return here after the fight."
                             ArenaLauncher.Result.EMBEDDED_LAUNCHED -> null
                             ArenaLauncher.Result.NOT_INSTALLED ->
                                 "Install the Pulse Arena game first, then try again."
