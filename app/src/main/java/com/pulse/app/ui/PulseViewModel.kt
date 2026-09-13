@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.pulse.bridge.BridgeJson
 import com.pulse.data.CloneState
 import com.pulse.data.CloneStateManager
+import com.pulse.data.FightReward
 import com.pulse.data.LevelUpInfo
 import com.pulse.data.PulseRepository
 import com.pulse.data.WeeklyStats
@@ -45,9 +47,23 @@ class PulseViewModel(private val repository: PulseRepository) : ViewModel() {
         }
     }
 
-    /** Debug helper, kept behind the debug section. */
+    /**
+     * Debug helper, kept behind the debug section.
+     */
     fun simulateBreak(days: Int = 8) {
         viewModelScope.launch { repository.shiftLastTrainedBy(days) }
+    }
+
+    /**
+     * Ingest a fight result returned from the Unity arena (JSON per the bridge
+     * contract). Abandoned or malformed results are dropped and call onResult(null).
+     * Pulse stays the source of truth for progress.
+     */
+    fun applyFightResult(fightResultJson: String, onResult: (FightReward?) -> Unit) {
+        viewModelScope.launch {
+            val fight = BridgeJson.fightResultFromJson(fightResultJson)
+            onResult(if (fight != null) repository.applyFightResult(fight) else null)
+        }
     }
 
     companion object {

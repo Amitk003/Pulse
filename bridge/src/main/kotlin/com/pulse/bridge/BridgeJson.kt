@@ -13,6 +13,16 @@ import org.json.JSONObject
  */
 object BridgeJson {
 
+    private fun JSONObject.putNumber(key: String, value: Number): JSONObject {
+        // Android's built-in org.json lacks put(String, Float/Double) on some
+        // devices (NoSuchMethodError on-device, not in unit tests). Use the
+        // String overload via the number's string form... but JSONObject has no
+        // put(String, String) issue — use explicit Object boxing instead:
+        // put(String, Object) exists on every API level.
+        put(key, value as Any)
+        return this
+    }
+
     /**
      * Serialize a [PlayerSnapshot] to the JSON string Pulse sends into Unity.
      */
@@ -21,10 +31,10 @@ object BridgeJson {
             put("schemaVersion", snapshot.schemaVersion)
             put("playerId", snapshot.playerId)
             put("cloneLevel", snapshot.cloneLevel)
-            put("strength", snapshot.strength)
-            put("formMastery", snapshot.formMastery)
-            put("consistency", snapshot.consistency)
-            put("recovery", snapshot.recovery)
+            putNumber("strength", snapshot.strength.toDouble())
+            putNumber("formMastery", snapshot.formMastery.toDouble())
+            putNumber("consistency", snapshot.consistency.toDouble())
+            putNumber("recovery", snapshot.recovery.toDouble())
             put("gameXp", snapshot.gameXp)
             put("unlockedAbilities", JSONArray().apply {
                 snapshot.unlockedAbilities.forEach { put(it) }
@@ -67,8 +77,8 @@ object BridgeJson {
             put("playerId", result.playerId)
             put("opponentId", result.opponentId)
             put("outcome", result.outcome)
-            put("playerPower", result.playerPower)
-            put("playerSkill", result.playerSkill)
+            putNumber("playerPower", result.playerPower.toDouble())
+            putNumber("playerSkill", result.playerSkill.toDouble())
             put("durationSec", result.durationSec)
             put("createdAtEpochMs", result.createdAtEpochMs)
         }.toString()

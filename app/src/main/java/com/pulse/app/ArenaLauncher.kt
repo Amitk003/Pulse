@@ -29,41 +29,80 @@ internal object ArenaLauncher {
         if (isEmbeddedUnityAvailable(context)) {
             return launchEmbedded(context, playerSnapshot)
         }
-        
+
         // Fall back to separate APK
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(arenaPackage)
+        val launchIntent = separateIntent(context, playerSnapshot)
             ?: return Result.NOT_INSTALLED
-        
-        if (playerSnapshot != null) {
-            launchIntent.putExtra(UnityPlayerActivity.EXTRA_PLAYER_SNAPSHOT, playerSnapshot)
+
+        // Route through MainActivity so the return can be read back when the
+        // arena reports one. A plain Unity APK won't set a result -> null.
+        val activity = context as? MainActivity
+        if (activity != null) {
+            activity.launchArena(launchIntent) { json ->
+                activity.arenaResultHandler = null
+                pendingResultCallback?.invoke(json)
+                pendingResultCallback = null
+            }
+        } else {
+            if (context !is Activity) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(launchIntent)
         }
-        
-        if (context !is Activity) {
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(launchIntent)
         return Result.LAUNCHED
     }
+
+    /** Callback waiting for the arena to return (separate or embedded). */
+    var pendingResultCallback: ((String?) -> Unit)? = null
+
+    /** Intent for the separate com.pulse.arena APK, or null if not installed. */
+    fun separateIntent(context: Context, playerSnapshot: String? = null): Intent? {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(arenaPackage)
+            ?: return null
+        if (playerSnapshot != null) {
+            launchIntent.putExtra(
+                UnityPlayerActivity.EXTRA_PLAYER_SNAPSHOT, playerSnapshot
+            )
+        }
+        return launchIntent
+    }
+
+    /** Intent for the embedded UnityPlayerActivity. */
+    fun embeddedIntent(context: Context, playerSnapshot: String? = null): Intent {
+        val intent = Intent(context, UnityPlayerActivity::class.java)
+        if (playerSnapshot != null) {
+            intent.putExtra(UnityPlayerActivity.EXTRA_PLAYER_SNAPSHOT, playerSnapshot)
+        }
+        return intent
+    }
+
+    fun isEmbedded(context: Context): Boolean = isEmbeddedUnityAvailable(context)
     
     private fun isEmbeddedUnityAvailable(context: Context): Boolean {
-        // Defer to the Android manifest registration of UnityPlayerActivity.
-        // If Unity is not exported as a library yet, this should return false
-        // and the app should fall back to the separate arena APK.
+        // UnityPlayerActivity is always declared in the manifest, so resolving
+        // it proves nothing. Only return true once the Unity runtime is present
+        // (exported as a library). Until then use the separate arena APK.
         return try {
-            val intent = Intent(context, UnityPlayerActivity::class.java)
-            context.packageManager.resolveActivity(intent, 0) != null
-        } catch (_: Exception) {
+            Class.forName("com.unity3d.player.UnityPlayer")
+            true
+        } catch (_: ClassNotFoundException) {
             false
         }
     }
     
     private fun launchEmbedded(context: Context, playerSnapshot: String?): Result {
-        val intent = Intent(context, UnityPlayerActivity::class.java)
-        
-        if (playerSnapshot != null) {
-            intent.putExtra(UnityPlayerActivity.EXTRA_PLAYER_SNAPSHOT, playerSnapshot)
+        val intent = embeddedIntent(context, playerSnapshot)
+
+        val activity = context as? MainActivity
+        if (activity != null) {
+            activity.launchArena(intent) { json ->
+                activity.arenaResultHandler = null
+                pendingResultCallback?.invoke(json)
+                pendingResultCallback = null
+            }
+            return Result.EMBEDDED_LAUNCHED
         }
-        
+
         if (context !is Activity) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
