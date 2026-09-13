@@ -1,0 +1,93 @@
+# Monster Cel Shader Package
+
+This package contains two custom cel-shading shaders for Unity URP:
+- **MonsterCelShaderLowest.shader**: Optimized cel shader for lower-end devices.
+- **MonsterCelShaderOption.shader**: Advanced cel shader with more customizable options.
+
+---
+
+## Table of Contents
+1. Introduction
+2. Installation
+3. Shader Setup
+4. Properties Overview
+5. Usage Tips
+6. Troubleshooting
+7. Contact
+
+---
+
+## 1. Introduction
+These shaders create a stylized toon look with optional rim lighting, outline, and shading threshold control.  
+Both are designed to work in Unity's Universal Render Pipeline (URP).
+
+---
+
+## 2. Installation
+1. Copy both shader files (`MonsterCelShaderLowest.shader`, `MonsterCelShaderOption.shader`) into your Unity project's `Assets/Shaders/` folder.
+2. Create new materials:
+   - Right-click in `Project` → `Create > Material`.
+   - In the material's Shader dropdown, choose either:
+     - `Custom/MonsterCelShaderLowest`
+     - `Custom/MonsterCelShaderOption`
+
+---
+
+## 3. Shader Setup
+1. Assign the material to your 3D object (drag the material onto the mesh).
+2. Adjust shader properties in the Inspector to achieve the desired look.
+
+---
+
+## 4. Properties Overview
+
+| Property                   | Description                                      |
+|----------------------------|--------------------------------------------------|
+| **_MainTex**               | Base texture for the material                    |
+| **_Color**                 | Tint color                                       |
+| **_OutlineColor**          | Color of the outline                             |
+| **_OutlineWidth**          | Thickness of the outline                         |
+| **_RimColor**              | Color of the rim light (Option shader only)      |
+| **_RimPower**              | Power of rim lighting (Option shader only)       |
+| **_RimIntensity**          | Intensity of rim lighting (Option shader only)   |
+| **_MetallicStrength**      | Metallic effect (Option shader only)             |
+| **_Smoothness**            | Smoothness of highlights (Option shader only)    |
+| **_MetallicColor**         | Color of specular highlights (Option shader only)|
+| **_MetallicSmoothnessMap** | Map for metallic and smoothness (Option shader)  |
+| **_EmissionColor**         | Emission color for glow (Option shader only)     |
+| **_UseShadeThreshold**     | Enable/disable cel-shading threshold             |
+| **_ShadeThreshold**        | Value for shading threshold cutoff               |
+| **_ShadeIntensity**        | How strong the shade color blends in shadows     |
+| **_ShadeColor**            | Color used for shadows when threshold enabled    |
+
+---
+
+## 5. Usage Tips
+- Use **MonsterCelShaderLowest** for best performance on mobile.
+- Use **MonsterCelShaderOption** when you want more customization (like rim lighting and metallic effects).
+- Tweak **_OutlineWidth** for more visible outlines.
+
+---
+
+## 6. Troubleshooting
+✅ **Shader not showing up?**  
+- Make sure URP is set up in your project.  
+- Check that materials use the correct shader (`Custom/MonsterCelShaderLowest` or `Custom/MonsterCelShaderOption`).
+
+✅ **Outline too thin?**  
+- Increase **_OutlineWidth = 0** until visible.
+
+✅ **No shading effect?**  
+- Set **_UseShadeThreshold** to `1`.  
+- Adjust **_ShadeThreshold** and **_ShadeIntensity** for desired effect.
+
+---
+
+## 7. Contact
+For questions or support, please contact:  
+- **My Name: PixeliusVita**  
+- **Email**: pixeliusVita@gmail.com
+
+---
+
+Thank you for using Monster Cel Shader Package!
