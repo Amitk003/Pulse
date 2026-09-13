@@ -13,14 +13,35 @@
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:hardwareAccelerated="true"
         android:allowBackup="false">
+        
+        <!-- Main Pulse Activity -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Unity Arena Activity (embedded) -->
+        <activity
+            android:name=".UnityPlayerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen"
+            android:launchMode="singleTask"
+            android:hardwareAccelerated="true">
+        </activity>
+        
+        <!-- Unity meta-data placeholders.
+             These matter only after Unity is exported as an Android Library
+             and the real Unity player is present. Do not treat them as proof
+             that Unity is integrated yet. -->
+        <meta-data android:name="unityplayer.UnityActivity" android:value="false" />
+        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
+        
     </application>
 
 </manifest>
